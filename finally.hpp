@@ -52,7 +52,7 @@ void finally_example()
   finally
   {
     close(fd);
-  };
+  }; // IMPORTANT: the ending semicolon is mandatory.
   
   log.info << "exiting the function maturely";
 }
@@ -60,7 +60,7 @@ void finally_example()
 #endif
 
 #define try_ \
-  detail::try_begin() << [&]()
+  detail::try_tag() << [&]()
 
 #define catch_(x) \
   << [&](x)
@@ -74,7 +74,7 @@ void finally_example()
 namespace detail
 {
 
-  struct try_begin {};
+  struct try_tag {};
   struct finally_tag {};
 
   template<typename LambdaExpr>
@@ -110,7 +110,7 @@ namespace detail
     explicit try_block(std::function<void ()> try_clause)
       : try_clause_(std::move(try_clause)) {}
   };
-  try_block operator<<(try_begin, std::function<void ()> try_clause)
+  try_block operator<<(try_tag, std::function<void ()> try_clause)
   {
     return try_block(std::move(try_clause));
   }
