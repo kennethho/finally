@@ -9,8 +9,6 @@ Its syntax is very close to, and as far as I can tell semantically equivalent to
 * It has to end with a semicolon. See example code below.
 * Added support of finally clause, obviously.
 
-There is one more thing, arguably subtle but significant at times depending on the context/application, should be noted. Unlike native try/catch, this code allocates memory from heap (directly via *new*, and indirectly via std:function<>::function). This implies, for maximum exception-safty, one would need to apply native try/catch in the outmost layer of exception handling, e.g. main() and thread entry-points.
-
 It's a header only library. To compile, for example using my test program finally.cpp, you do:
 <pre>
   $ g++-4.5 -std=c++0x finally.cpp
@@ -43,7 +41,13 @@ void finally_example()
   {
     close(fd);
   };  // IMPORTANT: the ending semicolon is mandatory.
-  
+
   log.info &lt;&lt; "exiting the function maturely";
 }
 </pre>
+
+One more thing, arguably subtle but possibly significant at times depending on the context/application, worth nothing. Unlike native try/catch, this mechanism allocates memory from heap (directly via *new*, and indirectly via std:function<>::function). Though it provides strong exception-safety, it is not no-throw. [1]
+
+This implies, for maximum exception-safety, one may opt native try/catch in the outmost layer of exception handling, to handle/capture failures on the mechanism itself, e.g. main() and thread entry-points.
+
+  [1]: http://en.wikipedia.org/wiki/Exception_guarantees        "Exception guarantees"
