@@ -1,7 +1,7 @@
 Emulation of *finally* in and using C++11.
 ================================
 
-The code is a result of me hacking and exploring C++11. It is certainly not to promote use of "finally" in C++. RAII is a better route most of the time, if not always.
+The code is a result of me hacking and exploring C++11. It is certainly not to promote use of *finally* in C++. RAII is a better route most of the time, if not always.
 
 Its sytax is very close to, and as far as I can tell semantically equivalent to, native try/catch, with a few exceptions:
 
