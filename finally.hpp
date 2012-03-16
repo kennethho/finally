@@ -189,9 +189,9 @@ namespace detail
 
     template <class T>
     try_catch_assembly(
-      try_catch_assembly assembly, 
+      try_catch_assembly try_catch, 
       std::function<void (T)> catch_clause)
-      : cntx_(move(assembly.cntx_))
+      : cntx_(move(try_catch.cntx_))
     {
       context* const cntx = cntx_.get();
 
@@ -213,9 +213,9 @@ namespace detail
       };
     }
     try_catch_assembly(
-      try_catch_assembly assembly, 
+      try_catch_assembly try_catch, 
       std::function<void ()> catchall_clause)
-      : cntx_(move(assembly.cntx_))
+      : cntx_(move(try_catch.cntx_))
     {
       context* const cntx = cntx_.get();
 
