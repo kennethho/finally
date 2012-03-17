@@ -38,22 +38,28 @@ void finally_example()
   {
     // some code
   }
-  catch_(network_error& x)
+  catch_(domain_error& x)
   {
-    log.error << x.what();
+    log.debug << "exception caught: " << x.what();
+    if(timed_out)
+    {
+      log.error << "timed out, throwing timeout_error.";
+      throw timeout_error(x);
+    }
 
+    log.debug << "handling exception";
     // error handling code
   }
   catchall
   {
-    log.error << "irrecoverable exception";
+    log.error << "unknown exception, propagating caught exception.";
     throw;
   }
   finally
   {
     close(fd);
-  }; // IMPORTANT: the ending semicolon is mandatory.
-  
+  };  // IMPORTANT: the ending semicolon is mandatory.
+
   log.info << "exiting the function maturely";
 }
 
