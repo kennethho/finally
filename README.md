@@ -53,6 +53,43 @@ void finally_example()
 }
 </pre>
 
+If you are curious, above code would expanded into (without the comments, of course):
+<pre>
+void finally_example()
+{
+  int fd = open(...);
+  assert(fd != 0);
+
+  detail::try_tag() &lt;&lt; [&]()
+  {
+    // some code
+  }
+  &lt;&lt; [&](domain_error& x)
+  {
+    log.debug &lt;&lt; "exception caught: " &lt;&lt; x.what();
+    if(timed_out)
+    {
+      log.error &lt;&lt; "timed out, throwing timeout_error.";
+      throw timeout_error(x);
+    }
+
+    log.debug &lt;&lt; "handling exception";
+    // error handling code
+  }
+  &lt;&lt; [&]()
+  {
+    log.error &lt;&lt; "unknown exception, propagating caught exception.";
+    throw;
+  }
+  &lt;&lt; detail::finally_tag() &lt;&lt; [&]()
+  {
+    close(fd);
+  };  // IMPORTANT: the ending semicolon is mandatory.
+
+  log.info &lt;&lt; "exiting the function maturely";
+}
+</pre>
+
 One more thing worth nothing, arguably subtle but potentially significant at times depending on the context/application. Unlike native try/catch, this mechanism allocates memory from heap (directly via *new*, indirectly via std:function<>::function and std:function<>::operator=) when establishing harness for user try/catch/finally clauses, but not while it is executing them.
 
 Though the mechanism provides strong exception-safety, it is not no-throw. [1]
