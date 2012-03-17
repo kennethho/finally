@@ -27,14 +27,21 @@ void finally_example()
   {
     // some code
   }
-  catch_(network_error& x)
+  catch_(domain_error& x)
   {
-    log.debug &lt;&lt; "caught and handling exception: " &lt;&lt; x.what();
+    log.debug &lt;&lt; "exception caught: " &lt;&lt; x.what();
+    if(timed_out)
+    {
+      log.error &lt;&lt; "timed out, throwing timeout_error.";
+      throw timeout_error(x);
+    }
+
+    log.debug &lt;&lt; "handling exception";
     // error handling code
   }
   catchall
   {
-    log.error &lt;&lt; "irrecoverable exception";
+    log.error &lt;&lt; "unknown exception, propagating caught exception.";
     throw;
   }
   finally
