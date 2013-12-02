@@ -263,22 +263,22 @@ namespace detail
     return try_catch_assembly(std::move(try_catch), std::move(catch_clause));
   }
 
-  struct xpremature_try_catch_finally_assembly
+  struct premature_try_catch_finally_assembly
   {
     std::unique_ptr<try_catch_assembly::context> try_catch_;
 
-    explicit xpremature_try_catch_finally_assembly(try_catch_assembly try_catch)
+    explicit premature_try_catch_finally_assembly(try_catch_assembly try_catch)
       : try_catch_(move(try_catch.cntx_))
     {}
-    xpremature_try_catch_finally_assembly(const xpremature_try_catch_finally_assembly&) = delete;
-    xpremature_try_catch_finally_assembly(xpremature_try_catch_finally_assembly&& other)
+    premature_try_catch_finally_assembly(const premature_try_catch_finally_assembly&) = delete;
+    premature_try_catch_finally_assembly(premature_try_catch_finally_assembly&& other)
       : try_catch_(move(other.try_catch_))
     {
     }
   };
-  xpremature_try_catch_finally_assembly operator<<(try_catch_assembly try_catch, finally_tag)
+  premature_try_catch_finally_assembly operator<<(try_catch_assembly try_catch, finally_tag)
   {
-    return xpremature_try_catch_finally_assembly(std::move(try_catch));
+    return premature_try_catch_finally_assembly(std::move(try_catch));
   }
 
   struct try_catch_finally_assembly
@@ -287,7 +287,7 @@ namespace detail
     std::function<void ()> finally_clause_;
 
     try_catch_finally_assembly(
-      xpremature_try_catch_finally_assembly pre, 
+      premature_try_catch_finally_assembly pre, 
       std::function<void ()> finally_clause)
       : try_catch_(move(pre.try_catch_)),
         finally_clause_(move(finally_clause))
@@ -312,7 +312,7 @@ namespace detail
   };
 
   try_catch_finally_assembly operator<<(
-    xpremature_try_catch_finally_assembly pre, 
+    premature_try_catch_finally_assembly pre, 
     std::function<void ()> finally_clause)
   {
     return try_catch_finally_assembly(std::move(pre), std::move(finally_clause));
