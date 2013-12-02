@@ -241,7 +241,7 @@ namespace detail
       };
     }
 
-    ~try_catch_assembly()
+    ~try_catch_assembly() noexcept(false)
     {
       if(cntx_.get() == false)
         return;
@@ -295,7 +295,7 @@ namespace detail
     }
     try_catch_finally_assembly(const try_catch_finally_assembly&) = delete;
     try_catch_finally_assembly(try_catch_finally_assembly&& other) = default;
-    ~try_catch_finally_assembly()
+    ~try_catch_finally_assembly() noexcept(false)
     {
       if(try_catch_.get() == false)
         return;
