@@ -75,7 +75,7 @@ void finally_example()
   << [&]()
 
 #define finally \
-  << detail::finally_tag() << [&]()
+  << detail::finally_tag() + [&]()
 
 namespace detail
 {
@@ -108,6 +108,12 @@ namespace detail
         (args_tuple*)0 )
       ) function_type;
   };
+
+  template<typename LambdaExpr>
+  typename lambda_traits<LambdaExpr>::function_type make_function(LambdaExpr lambda_expr)
+  {
+    return typename lambda_traits<LambdaExpr>::function_type{lambda_expr};
+  }
 
   struct try_block
   {
@@ -149,13 +155,17 @@ namespace detail
     std::unique_ptr<context> cntx_;
 
     try_catch_assembly(const try_catch_assembly& other) = delete;
-    try_catch_assembly(try_catch_assembly&& other) = default;
+    try_catch_assembly(try_catch_assembly&& other)
+    : cntx_(std::move(other.cntx_))
+    {
+    }
+
 
     template <class T>
     try_catch_assembly(
       std::function<void ()> try_clause, 
       std::function<void (T)> catch_clause)
-      : cntx_(new context())
+        : cntx_(new context())
     {
       context* const cntx = cntx_.get();
 
@@ -175,7 +185,7 @@ namespace detail
     try_catch_assembly(
       std::function<void ()> try_clause, 
       std::function<void ()> catchall_clause)
-      : cntx_(new context())
+        : cntx_(new context())
     {
       context* const cntx = cntx_.get();
 
@@ -197,7 +207,7 @@ namespace detail
     try_catch_assembly(
       try_catch_assembly try_catch, 
       std::function<void (T)> catch_clause)
-      : cntx_(move(try_catch.cntx_))
+        : cntx_(std::move(try_catch.cntx_))
     {
       context* const cntx = cntx_.get();
 
@@ -219,9 +229,9 @@ namespace detail
       };
     }
     try_catch_assembly(
-      try_catch_assembly try_catch, 
+      try_catch_assembly try_catch_asm,
       std::function<void ()> catchall_clause)
-      : cntx_(move(try_catch.cntx_))
+      : cntx_(move(try_catch_asm.cntx_))
     {
       context* const cntx = cntx_.get();
 
@@ -250,58 +260,51 @@ namespace detail
     }
   };
 
-  template <class LambdaExpr>
-  try_catch_assembly operator<<(try_block try_blk, LambdaExpr lambda_expr)
+  struct finally_block
   {
-    typename lambda_traits<LambdaExpr>::function_type catch_clause(lambda_expr);
-    return try_catch_assembly(move(try_blk.try_clause_), std::move(catch_clause));
-  }
-  template <class LambdaExpr>
-  try_catch_assembly operator<<(try_catch_assembly try_catch, LambdaExpr lambda_expr)
-  {
-    typename lambda_traits<LambdaExpr>::function_type catch_clause(lambda_expr);
-    return try_catch_assembly(std::move(try_catch), std::move(catch_clause));
-  }
+    std::function<void ()> finally_clause_;
 
-  struct premature_try_catch_finally_assembly
-  {
-    std::unique_ptr<try_catch_assembly::context> try_catch_;
-
-    explicit premature_try_catch_finally_assembly(try_catch_assembly try_catch)
-      : try_catch_(move(try_catch.cntx_))
-    {}
-    premature_try_catch_finally_assembly(const premature_try_catch_finally_assembly&) = delete;
-    premature_try_catch_finally_assembly(premature_try_catch_finally_assembly&& other)
-      : try_catch_(move(other.try_catch_))
-    {
-    }
+      finally_block(std::function<void ()> finally_clause)
+        : finally_clause_(finally_clause) {}
   };
-  premature_try_catch_finally_assembly operator<<(try_catch_assembly try_catch, finally_tag)
+
+  finally_block operator+(finally_tag, std::function<void ()> finally_clause)
   {
-    return premature_try_catch_finally_assembly(std::move(try_catch));
+    return finally_block{ finally_clause };
+  }
+
+  template <class LambdaExpr>
+  try_catch_assembly operator<<(try_block try_blk, LambdaExpr catch_clause)
+  {
+    return try_catch_assembly(std::move(try_blk.try_clause_), make_function(catch_clause));
+  }
+  template <class LambdaExpr>
+  try_catch_assembly operator<<(try_catch_assembly try_catch_asm, LambdaExpr catch_clause)
+  {
+    return try_catch_assembly(std::move(try_catch_asm), make_function(catch_clause));
   }
 
   struct try_catch_finally_assembly
   {
-    std::unique_ptr<try_catch_assembly::context> try_catch_;
+    std::unique_ptr<try_catch_assembly::context> try_catch_cntx_;
     std::function<void ()> finally_clause_;
 
     try_catch_finally_assembly(
-      premature_try_catch_finally_assembly pre, 
-      std::function<void ()> finally_clause)
-      : try_catch_(move(pre.try_catch_)),
-        finally_clause_(move(finally_clause))
+      try_catch_assembly try_catch_asm,
+      finally_block finally_blk)
+        : try_catch_cntx_(std::move(try_catch_asm.cntx_)),
+          finally_clause_(std::move(finally_blk.finally_clause_))
     {
     }
     try_catch_finally_assembly(const try_catch_finally_assembly&) = delete;
     try_catch_finally_assembly(try_catch_finally_assembly&& other) = default;
     ~try_catch_finally_assembly() noexcept(false)
     {
-      if(try_catch_.get() == false)
+      if(try_catch_cntx_.get() == false)
         return;
 
       try {
-        try_catch_->stack_();
+        try_catch_cntx_->stack_();
       }
       catch(...) {
         finally_clause_();
@@ -312,10 +315,10 @@ namespace detail
   };
 
   try_catch_finally_assembly operator<<(
-    premature_try_catch_finally_assembly pre, 
-    std::function<void ()> finally_clause)
+    try_catch_assembly try_catch_asm,
+    finally_block finally_blk)
   {
-    return try_catch_finally_assembly(std::move(pre), std::move(finally_clause));
+    return try_catch_finally_assembly(std::move(try_catch_asm), std::move(finally_blk.finally_clause_));
   }
 
 } // namespace detail
