@@ -66,7 +66,7 @@ void finally_example()
 #endif
 
 #define try_ \
-  detail::try_tag() << [&]()
+  detail::try_tag() + [&]()
 
 #define catch_(x) \
   << [&](x)
@@ -122,7 +122,7 @@ namespace detail
     explicit try_block(std::function<void ()> try_clause)
       : try_clause_(std::move(try_clause)) {}
   };
-  try_block operator<<(try_tag, std::function<void ()> try_clause)
+  try_block operator+(try_tag, std::function<void ()> try_clause)
   {
     return try_block(std::move(try_clause));
   }
